@@ -1,18 +1,15 @@
-﻿
-@model IEnumerable<WebApplication1.Models.Movie>
-
+﻿@model PagedList.IPagedList<WebApplication1.Models.Movie> 
+@using PagedList.Mvc;
 @{
     ViewBag.Title = "Index";
 }
-
 <h2>Index</h2>
-
 <p>
     @Html.ActionLink("Create New", "Create")
     @using (Html.BeginForm("Index", "Movies", FormMethod.Get))
     {
     <p>
-        Genre: @Html.DropDownList("movieGenre", "All")
+        Genre: @Html.DropDownList("MovieGenre", "All")
         Title: @Html.TextBox("SearchString") <br />
         <input type="submit" value="Filter" />
     </p>
@@ -21,23 +18,22 @@
 <table class="table">
     <tr>
         <th>
-            @Html.DisplayNameFor(model => model.Title)
+            @Html.ActionLink("Title", "Index", new { titleSortOrder = ViewBag.TitleSortParam })
         </th>
         <th>
-            @Html.DisplayNameFor(model => model.ReleaseDate)
+            @Html.ActionLink("Release Date", "Index", new { dateSortOrder = ViewBag.DateSortParam })
         </th>
         <th>
-            @Html.DisplayNameFor(model => model.Genre)
+           Genre
         </th>
         <th>
-            @Html.DisplayNameFor(model => model.Price)
+           Price
         </th>
         <th>
-            @Html.DisplayNameFor(model => model.Rating)
+           Rating
         </th>
         <th></th>
     </tr>
-
 @foreach (var item in Model) {
     <tr>
         <td>
@@ -62,5 +58,9 @@
         </td>
     </tr>
 }
-
 </table>
+<br />
+Page @(Model.PageCount < Model.PageNumber ? 0 : Model.PageNumber) of @Model.PageCount
+
+@Html.PagedListPager(Model, page => Url.Action("Index",
+    new { page, dateSortOrder = ViewBag.CurrentDateSort, SearchString = ViewBag.CurrentFilter, titleSortOrder = ViewBag.CurrentTitleSort, MovieGenre = ViewBag.CurrentMovieGenre}))

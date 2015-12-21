@@ -7,6 +7,7 @@ using System.Net;
 using System.Web;
 using System.Web.Mvc;
 using WebApplication1.Models;
+using PagedList;
 
 namespace WebApplication1.Controllers
 {
@@ -14,8 +15,14 @@ namespace WebApplication1.Controllers
     {
         private MovieDBContext db = new MovieDBContext();
         // GET: Movies
-        public ActionResult Index(string movieGenre, string SearchString)
+        public ActionResult Index(string MovieGenre, string SearchString, int? page, string dateSortOrder = null, string titleSortOrder = null)
         {
+            ViewBag.CurrentDateSort = dateSortOrder;
+            ViewBag.CurrentTitleSort = titleSortOrder;
+            ViewBag.CurrentFilter = SearchString;
+            ViewBag.CurrentGenre = MovieGenre;
+            ViewBag.TitleSortParam = titleSortOrder == "title"? "title_desc" : "title";
+            ViewBag.DateSortParam = dateSortOrder == "date"? "date_desc" : "date";
             var genres = new List<string>();
             var genresQuery = from d in db.Movies orderby d.Genre select d.Genre;
             genres.AddRange(genresQuery.Distinct());
@@ -25,10 +32,33 @@ namespace WebApplication1.Controllers
             {
                 movies = movies.Where(s => s.Title.Contains(SearchString));
             }
-            if (!String.IsNullOrEmpty(movieGenre)) {
-                movies = movies.Where(x => x.Genre == movieGenre);
+            if (!String.IsNullOrEmpty(MovieGenre)) {
+                movies = movies.Where(x => x.Genre == MovieGenre);
             }
-            return View(movies);
+            int pageSize = 3;
+            int pageNumber = (page ?? 1);
+            var pager = movies.OrderByDescending(m => m.Title).ToPagedList(pageNumber, pageSize);
+            switch (titleSortOrder){
+                case "title_desc":
+                    pager = movies.OrderByDescending(m => m.Title).ToPagedList(pageNumber, pageSize);
+                    break;
+                case "title":
+                    pager = movies.OrderBy(m => m.Title).ToPagedList(pageNumber, pageSize);
+                    break;
+                default:
+                    break;
+            }
+            switch (dateSortOrder) {
+                case "date":
+                    pager = movies.OrderBy(m => m.ReleaseDate).ToPagedList(pageNumber, pageSize);
+                    break;
+                case "date_desc":
+                    pager = movies.OrderByDescending(m => m.ReleaseDate).ToPagedList(pageNumber, pageSize);
+                    break;
+                default:
+                    break;
+            }
+            return View(pager);
         }
 
         // GET: Movies/Details/5
@@ -65,7 +95,6 @@ namespace WebApplication1.Controllers
                 db.SaveChanges();
                 return RedirectToAction("Index");
             }
-
             return View(movie);
         }
 
